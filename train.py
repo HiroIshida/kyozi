@@ -22,6 +22,7 @@ def get_cache_directory():
 
 class DataChunk:
     def __init__(self):
+        self.python_major_version = sys.version_info.major
         self.img_seq = []
         self.cmd_seq = []
     def push(self, img, cmd):
@@ -69,12 +70,14 @@ class DataManager:
             sub.unregister()
 
 if __name__=='__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-config', type=str, default='config.yaml')
-    args = parser.parse_args()
-    config_file = parser.config
-
     rospy.init_node('data_collector', disable_signals=True)
+    config_path = os.path.join(rospkg.RosPack().get_path('ros_data_collection'), 'config')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-config', type=str, default=os.path.join(config_path, 'pr2_rarm.yaml'))
+    args = parser.parse_args()
+    config_file = args.config
+
     with open(config_file) as f:
         config = yaml.safe_load(f)
     dm = DataManager(config)
