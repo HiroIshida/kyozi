@@ -20,11 +20,12 @@ def get_cache_directory():
     return dirname
 
 class DataChunk:
-    def __init__(self):
+    def __init__(self, joint_names):
         self.python_major_version = sys.version_info.major
         self.time_seq = []
         self.img_seq = []
         self.cmd_seq = []
+        self.joint_names = joint_names
     def push(self, time, img, cmd):
         self.time_seq.append(time)
         self.img_seq.append(img)

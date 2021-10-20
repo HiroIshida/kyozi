@@ -24,7 +24,7 @@ class DataManager:
         self.subs = [sub_img, sub_joint_state]
         self.joint_names = config['joint_names']
         self.joint_name_idx_table = None
-        self.data_chunk = DataChunk()
+        self.data_chunk = DataChunk(self.joint_names)
         self.flag_start = False
 
     def callback(self, img_msg, joint_states_msg):
