@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import argparse
 import os
+import time
 import sys
-import uuid
 import pickle
 import yaml
 import json
@@ -24,15 +24,17 @@ def get_cache_directory():
 class DataChunk:
     def __init__(self):
         self.python_major_version = sys.version_info.major
+        self.time_seq = []
         self.img_seq = []
         self.cmd_seq = []
-    def push(self, img, cmd):
+    def push(self, time, img, cmd):
+        self.time_seq.append(time)
         self.img_seq.append(img)
         self.cmd_seq.append(cmd)
     def dump(self):
-        postfix = str(uuid.uuid4())
+        postfix = time.strftime("%Y%m%d%H%M%S")
         filename = os.path.join(
-                get_cache_directory(), 'datachunk-{0}.cache'.format(postfix))
+                get_cache_directory(), 'sequence-{0}.cache'.format(postfix))
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
@@ -59,7 +61,10 @@ class DataManager:
         cmd = [data_dict[jname] for jname in self.joint_names]
         bridge = CvBridge()
         image = bridge.imgmsg_to_cv2(img_msg, desired_encoding='passthrough')
-        self.data_chunk.push(image, cmd)
+        t = img_msg.header.stamp
+        time = t.secs + 1e-9 * t.nsecs
+
+        self.data_chunk.push(time, image, cmd)
 
     def start_session(self):
         self.flag_start = True
