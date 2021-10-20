@@ -10,6 +10,7 @@ import cv2
 
 from utils import DataChunk
 from utils import get_cache_directory
+from utils import load_pickle_6compat
 
 def clamp_to_s1(something):
     lower_side = -math.pi
@@ -44,13 +45,7 @@ def summarize(sampling_hz=24, resolution=None):
     img_seqs = []
     cmd_seqs = []
     for fn in tqdm.tqdm(cache_files):
-        try:
-            with open(fn, 'rb') as f:
-                sequence = pickle.load(f)
-        except UnicodeDecodeError:
-            print('probably cache file was created by 2.x but attempt to load by 3.x')
-            with open(fn, 'rb') as f:
-                sequence = pickle.load(f, encoding='latin1')
+        sequence = load_pickle_6compat(fn)
         img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resolution)
         img_seqs.append(img_seq)
         cmd_seqs.append(clamp_to_s1(cmd_seq))

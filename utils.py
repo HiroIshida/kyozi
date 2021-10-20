@@ -3,6 +3,16 @@ import sys
 import time
 import pickle
 
+def load_pickle_6compat(filename):
+    try:
+        with open(filename, 'rb') as f:
+            obj = pickle.load(f)
+    except UnicodeDecodeError:
+        print('probably cache file was created by 2.x but attempt to load by 3.x')
+        with open(filename, 'rb') as f:
+            obj = pickle.load(f, encoding='latin1')
+    return obj
+
 def get_cache_directory(): 
     dirname = os.path.expanduser('~/.kyozi')
     if not os.path.exists(dirname):
