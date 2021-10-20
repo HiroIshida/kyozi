@@ -44,18 +44,22 @@ def summarize(sampling_hz=24, resolution=None):
     img_seqs = []
     cmd_seqs = []
     for fn in tqdm.tqdm(cache_files):
-        for filename in tqdm.tqdm(cache_files):
-            with open(filename, 'rb') as f:
-                sequence = pickle.load(f)
-            assert sequence.python_major_version == sys.version_info.major
-            img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resolution)
-            img_seqs.append(img_seq)
-            cmd_seqs.append(clamp_to_s1(cmd_seq))
-            print("summarized into {0} points.".format(len(img_seqs[0])))
+        with open(fn, 'rb') as f:
+            sequence = pickle.load(f)
+        assert sequence.python_major_version == sys.version_info.major
+        img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resolution)
+        img_seqs.append(img_seq)
+        cmd_seqs.append(clamp_to_s1(cmd_seq))
+        print("summarized into {0} points.".format(len(img_seqs[0])))
+    return img_seqs, cmd_seqs
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-hz', type=int, default=10)
     args = parser.parse_args()
     sampling_hz = args.hz
-    summarize(sampling_hz)
+    img_seqs, cmd_seqs = summarize(sampling_hz)
+    chunk = {'img_seqs': img_seqs, 'cmd_seqs': cmd_seqs, 'python_major_version': sys.version_info.major}
+    filename = os.path.join(get_cache_directory(), 'summary_chunk.pickle')
+    with open(filename, 'wb') as f:
+        pickle.dump(chunk, f)
