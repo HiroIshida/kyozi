@@ -44,9 +44,13 @@ def summarize(sampling_hz=24, resolution=None):
     img_seqs = []
     cmd_seqs = []
     for fn in tqdm.tqdm(cache_files):
-        with open(fn, 'rb') as f:
-            sequence = pickle.load(f)
-        assert sequence.python_major_version == sys.version_info.major
+        try:
+            with open(fn, 'rb') as f:
+                sequence = pickle.load(f)
+        except UnicodeDecodeError:
+            print('probably cache file was created by 2.x but attempt to load by 3.x')
+            with open(fn, 'rb') as f:
+                sequence = pickle.load(f, encoding='latin1')
         img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resolution)
         img_seqs.append(img_seq)
         cmd_seqs.append(clamp_to_s1(cmd_seq))
