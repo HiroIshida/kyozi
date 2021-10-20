@@ -16,7 +16,7 @@ import cv2
 from cv_bridge import CvBridge
 
 def get_cache_directory(): 
-    dirname = os.path.expanduser('~/.ros_data_collection')
+    dirname = os.path.expanduser('~/.kyozi')
     if not os.path.exists(dirname):
         os.makedirs(dirname)
     return dirname
@@ -32,7 +32,7 @@ class DataChunk:
     def dump(self):
         postfix = str(uuid.uuid4())
         filename = os.path.join(
-                get_cache_directory(), 'datachunk{0}.cache'.format(postfix))
+                get_cache_directory(), 'datachunk-{0}.cache'.format(postfix))
         with open(filename, 'wb') as f:
             pickle.dump(self, f)
 
@@ -72,7 +72,7 @@ class DataManager:
 
 if __name__=='__main__':
     rospy.init_node('data_collector', disable_signals=True)
-    config_path = os.path.join(rospkg.RosPack().get_path('ros_data_collection'), 'config')
+    config_path = os.path.join(rospkg.RosPack().get_path('kyozi'), 'config')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-config', type=str, default=os.path.join(config_path, 'pr2_rarm.yaml'))
