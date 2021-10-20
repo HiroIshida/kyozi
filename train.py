@@ -46,8 +46,8 @@ class DataManager:
         self.flag_start = True
 
     def end_session(self):
-        self.data_chunk.dump()
         self.flag_start = False
+        self.data_chunk.dump()
         for sub in self.subs:
             sub.unregister()
 
