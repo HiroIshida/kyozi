@@ -23,18 +23,19 @@ class DataManager:
 
         self.subs = [sub_img, sub_joint_state]
         self.joint_names = config['joint_names']
-        self.joint_name_idx_table = None
+        self.joint_idxes = None
         self.data_chunk = DataChunk(self.joint_names)
         self.flag_start = False
 
     def callback(self, img_msg, joint_states_msg):
         if not self.flag_start:
             return 
-        if not self.joint_name_idx_table:
+        if not self.joint_idxes:
             data_dict = {name: i for (i, name) in enumerate(joint_states_msg.name)}
+            self.joint_idxes = [data_dict[name] for name in self.joint_names]
         rospy.loginfo('inside callback') 
 
-        cmd = [data_dict[jname] for jname in self.joint_names]
+        cmd = [joint_states_msg.position[idx] for idx in self.joint_idxes]
         bridge = CvBridge()
         image = bridge.imgmsg_to_cv2(img_msg, desired_encoding='passthrough')
         t = img_msg.header.stamp
