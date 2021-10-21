@@ -49,7 +49,7 @@ def summarize(sampling_hz=24, resolution=None):
         img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resolution)
         img_seqs.append(img_seq)
         cmd_seqs.append(clamp_to_s1(cmd_seq))
-        print("summarized into {0} points.".format(len(img_seqs)))
+        print("summarized into {0} points.".format(len(img_seq)))
     return img_seqs, cmd_seqs
 
 if __name__=='__main__':

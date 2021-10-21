@@ -8,12 +8,12 @@ try:
     import moviepy
     from moviepy.editor import ImageSequenceClip
     _has_moviepy = True
-except ModuleNotFoundError:
+except:
     _has_moviepy = False
 try:
     import skrobot
     _has_skrobot = True
-except ModuleNotFoundError:
+except:
     _has_skrobot = False
 
 from utils import get_cache_directory
