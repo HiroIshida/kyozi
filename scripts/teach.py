@@ -11,21 +11,22 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import JointState
 from cv_bridge import CvBridge
 
+from utils import Config, construct_config
 from utils import DataChunk
-from utils import get_cache_directory
 
 class DataManager:
     def __init__(self, config):
-        sub_img = message_filters.Subscriber(config['image_topic'], Image)
-        sub_joint_state = message_filters.Subscriber(config['joint_states_topic'], JointState)
+        sub_img = message_filters.Subscriber(config.image_topic, Image)
+        sub_joint_state = message_filters.Subscriber(config.joint_states_topic, JointState)
         ts = message_filters.ApproximateTimeSynchronizer([sub_img, sub_joint_state], 2, 0.2)
         ts.registerCallback(self.callback)
 
         self.subs = [sub_img, sub_joint_state]
-        self.joint_names = config['joint_names']
+        self.joint_names = config.joint_names
         self.joint_idxes = None
         self.data_chunk = DataChunk(self.joint_names)
         self.flag_start = False
+        self.config = config
 
     def callback(self, img_msg, joint_states_msg):
         if not self.flag_start:
@@ -33,7 +34,7 @@ class DataManager:
         if not self.joint_idxes:
             data_dict = {name: i for (i, name) in enumerate(joint_states_msg.name)}
             self.joint_idxes = [data_dict[name] for name in self.joint_names]
-        rospy.loginfo('inside callback') 
+        rospy.loginfo('save data') 
 
         cmd = [joint_states_msg.position[idx] for idx in self.joint_idxes]
         bridge = CvBridge()
@@ -48,7 +49,7 @@ class DataManager:
 
     def end_session(self):
         self.flag_start = False
-        self.data_chunk.dump()
+        self.data_chunk.dump(self.config)
         for sub in self.subs:
             sub.unregister()
 
@@ -61,8 +62,7 @@ if __name__=='__main__':
     args = parser.parse_args()
     config_file = args.config
 
-    with open(config_file) as f:
-        config = yaml.safe_load(f)
+    config = construct_config(config_file)
     dm = DataManager(config)
     dm.start_session()
     try:

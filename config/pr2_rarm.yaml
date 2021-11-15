@@ -1,3 +1,4 @@
+project_path: ~/.kyozi
 image_topic: /kinect_head/rgb/image_color
 joint_states_topic: /joint_states
 joint_names: [
