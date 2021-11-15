@@ -5,11 +5,20 @@ import pickle
 import yaml
 
 class Config(object):
-    def __init__(self, project_path, image_topic, joint_states_topic, control_joint_names):
+    def __init__(self, 
+            project_path, 
+            image_topic, 
+            joint_states_topic, 
+            control_joint_names,
+            init_joint_names,
+            init_joint_angles,
+            ):
         self.project_path = project_path
         self.image_topic = image_topic
         self.joint_states_topic = joint_states_topic
         self.control_joint_names = control_joint_names
+        self.init_joint_names = init_joint_names
+        self.init_joint_angles = init_joint_angles
 
 def construct_config(config_file):
     with open(config_file) as f:
@@ -18,7 +27,9 @@ def construct_config(config_file):
             project_path = dic['project_path'], 
             image_topic = dic['image_topic'],
             joint_states_topic = dic['joint_states_topic'],
-            control_joint_names = dic['control_joint_names'])
+            control_joint_names = dic['control_joint_names'],
+            init_joint_names = dic['init_joint_names'],
+            init_joint_angles = dic['init_joint_angles'])
     return config
 
 def load_pickle_6compat(filename):
