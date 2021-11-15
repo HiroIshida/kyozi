@@ -7,10 +7,12 @@ import tqdm
 import numpy as np
 import math
 import cv2
+import rospkg
 
 from utils import DataChunk
-from utils import get_cache_directory
+from utils import get_cache_directory, get_project_directory
 from utils import load_pickle_6compat
+from utils import Config, construct_config
 
 def clamp_to_s1(something):
     lower_side = -math.pi
@@ -20,7 +22,7 @@ def nearest_time_sampling(sequence, sampling_hz, resize_shape=None):
     coef = 1.2
     time_seq = sequence.time_seq
     average_hz = 1.0/((time_seq[-1] - time_seq[0])/(len(time_seq) - 1))
-    assert sampling_hz * coef < average_hz, 'your data is too scarse for specified sampling hz'
+    assert sampling_hz * coef < average_hz, 'your data is too sparse for specified sampling hz. Please set smaller hz.'
 
     time_seq_normalized = np.array([e - time_seq[0] for e in time_seq])
     interval = 1.0/sampling_hz
@@ -37,8 +39,8 @@ def nearest_time_sampling(sequence, sampling_hz, resize_shape=None):
         cmdseq.append(sequence.cmd_seq[idx])
     return np.array(imgseq), np.array(cmdseq)
 
-def summarize(sampling_hz=24, resolution=None):
-    cache_dir = get_cache_directory()
+def summarize(config, sampling_hz=24, resolution=None):
+    cache_dir = get_cache_directory(config)
     files = [os.path.join(cache_dir, fname) for fname in os.listdir(cache_dir)]
     cache_files = [fn for fn in files if os.path.splitext(fn)[1]=='.cache']
 
@@ -53,12 +55,18 @@ def summarize(sampling_hz=24, resolution=None):
     return img_seqs, cmd_seqs
 
 if __name__=='__main__':
+    config_path = os.path.join(rospkg.RosPack().get_path('kyozi'), 'config')
+
     parser = argparse.ArgumentParser()
+    parser.add_argument('-config', type=str, default=os.path.join(config_path, 'pr2_rarm.yaml'))
     parser.add_argument('-hz', type=int, default=10)
     args = parser.parse_args()
+    config_file = args.config
     sampling_hz = args.hz
-    img_seqs, cmd_seqs = summarize(sampling_hz)
+    
+    config = construct_config(config_file)
+    img_seqs, cmd_seqs = summarize(config, sampling_hz)
     chunk = {'img_seqs': img_seqs, 'cmd_seqs': cmd_seqs, 'python_major_version': sys.version_info.major}
-    filename = os.path.join(get_cache_directory(), 'summary_chunk.pickle')
+    filename = os.path.join(get_project_directory(config), 'summary_chunk.pickle')
     with open(filename, 'wb') as f:
         pickle.dump(chunk, f)
