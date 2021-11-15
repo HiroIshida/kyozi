@@ -22,9 +22,9 @@ class DataManager:
         ts.registerCallback(self.callback)
 
         self.subs = [sub_img, sub_joint_state]
-        self.joint_names = config.joint_names
+        self.control_joint_names = config.control_joint_names
         self.joint_idxes = None
-        self.data_chunk = DataChunk(self.joint_names)
+        self.data_chunk = DataChunk(self.control_joint_names)
         self.flag_start = False
         self.config = config
 
@@ -33,7 +33,7 @@ class DataManager:
             return 
         if not self.joint_idxes:
             data_dict = {name: i for (i, name) in enumerate(joint_states_msg.name)}
-            self.joint_idxes = [data_dict[name] for name in self.joint_names]
+            self.joint_idxes = [data_dict[name] for name in self.control_joint_names]
         rospy.loginfo('save data') 
 
         cmd = [joint_states_msg.position[idx] for idx in self.joint_idxes]

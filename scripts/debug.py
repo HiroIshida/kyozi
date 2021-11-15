@@ -63,7 +63,7 @@ if __name__=='__main__':
         viewer.show()
         time.sleep(2)
         for cmd in cmd_seq:
-            for jn, angle in zip(config.joint_names, cmd):
+            for jn, angle in zip(config.control_joint_names, cmd):
                 joint = robot.__dict__[jn]
                 joint.joint_angle(angle)
             viewer.redraw()

@@ -5,11 +5,11 @@ import pickle
 import yaml
 
 class Config(object):
-    def __init__(self, project_path, image_topic, joint_states_topic, joint_names):
+    def __init__(self, project_path, image_topic, joint_states_topic, control_joint_names):
         self.project_path = project_path
         self.image_topic = image_topic
         self.joint_states_topic = joint_states_topic
-        self.joint_names = joint_names
+        self.control_joint_names = control_joint_names
 
 def construct_config(config_file):
     with open(config_file) as f:
@@ -18,7 +18,7 @@ def construct_config(config_file):
             project_path = dic['project_path'], 
             image_topic = dic['image_topic'],
             joint_states_topic = dic['joint_states_topic'],
-            joint_names = dic['joint_names'])
+            control_joint_names = dic['control_joint_names'])
     return config
 
 def load_pickle_6compat(filename):
@@ -45,12 +45,12 @@ def get_cache_directory(config):
     return cache_dir
 
 class DataChunk:
-    def __init__(self, joint_names):
+    def __init__(self, control_joint_names):
         self.python_major_version = sys.version_info.major
         self.time_seq = []
         self.img_seq = []
         self.cmd_seq = []
-        self.joint_names = joint_names
+        self.control_joint_names = control_joint_names
     def push(self, time, img, cmd):
         self.time_seq.append(time)
         self.img_seq.append(img)
