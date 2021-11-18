@@ -14,11 +14,21 @@ from utils import get_cache_directory, get_project_directory
 from utils import load_pickle_6compat
 from utils import Config, construct_config
 
+class Resizer:
+    def __init__(self, image_config):
+        self.x_bound = slice(image_config.x_min, image_config.x_max)
+        self.y_bound = slice(image_config.y_min, image_config.y_max)
+        self.resol = image_config.resolution
+    def __call__(self, cv_img):
+        cv_img = cv_img[self.x_bound, self.y_bound]
+        resized = cv2.resize(cv_img, (self.resol, self.resol), interpolation = cv2.INTER_AREA)
+        return resized
+
 def clamp_to_s1(something):
     lower_side = -math.pi
     return ((something - lower_side) % (2 * math.pi)) + lower_side
 
-def nearest_time_sampling(sequence, sampling_hz, resize_shape=None):
+def nearest_time_sampling(sequence, sampling_hz, resizer=None):
     coef = 1.2
     time_seq = sequence.time_seq
     average_hz = 1.0/((time_seq[-1] - time_seq[0])/(len(time_seq) - 1))
@@ -31,24 +41,25 @@ def nearest_time_sampling(sequence, sampling_hz, resize_shape=None):
     for i in range(int(time_seq_normalized[-1] * sampling_hz)):
         t = interval * i
         idx = np.argmin(np.abs(time_seq_normalized - t))
-        if resize_shape is not None:
-            img = cv2.resize(sequence.img_seq[idx], resize_shape)
+        if resizer is not None:
+            img = resizer(sequence.img_seq[idx])
         else:
             img = sequence.img_seq[idx]
         imgseq.append(img)
         cmdseq.append(sequence.cmd_seq[idx])
     return np.array(imgseq), np.array(cmdseq)
 
-def summarize(config, sampling_hz=24, resolution=None):
+def summarize(config, sampling_hz=24):
     cache_dir = get_cache_directory(config)
     files = [os.path.join(cache_dir, fname) for fname in os.listdir(cache_dir)]
     cache_files = [fn for fn in files if os.path.splitext(fn)[1]=='.cache']
+    resizer = Resizer(config.image_config)
 
     img_seqs = []
     cmd_seqs = []
     for fn in tqdm.tqdm(cache_files):
         sequence = load_pickle_6compat(fn)
-        img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resolution)
+        img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resizer)
         img_seqs.append(img_seq)
         cmd_seqs.append(clamp_to_s1(cmd_seq))
         print("summarized into {0} points.".format(len(img_seq)))

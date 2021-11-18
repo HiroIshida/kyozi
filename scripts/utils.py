@@ -4,6 +4,14 @@ import time
 import pickle
 import yaml
 
+class ImageConfig(object):
+    def __init__(self, img_dict):
+        self.x_min = img_dict['x_min']
+        self.x_max = img_dict['x_max']
+        self.y_min = img_dict['y_min']
+        self.y_max = img_dict['y_max']
+        self.resolution = img_dict['resolution']
+
 class Config(object):
     def __init__(self, 
             project_path, 
@@ -12,6 +20,7 @@ class Config(object):
             control_joint_names,
             init_joint_names,
             init_joint_angles,
+            image_config,
             ):
         self.project_path = project_path
         self.image_topic = image_topic
@@ -19,6 +28,7 @@ class Config(object):
         self.control_joint_names = control_joint_names
         self.init_joint_names = init_joint_names
         self.init_joint_angles = init_joint_angles
+        self.image_config = ImageConfig(image_config)
 
 def construct_config(config_file):
     with open(config_file) as f:
@@ -29,7 +39,9 @@ def construct_config(config_file):
             joint_states_topic = dic['joint_states_topic'],
             control_joint_names = dic['control_joint_names'],
             init_joint_names = dic['init_joint_names'],
-            init_joint_angles = dic['init_joint_angles'])
+            init_joint_angles = dic['init_joint_angles'],
+            image_config = dic['image_config']
+            )
     return config
 
 def load_pickle_6compat(filename):
