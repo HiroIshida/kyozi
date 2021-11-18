@@ -6,6 +6,7 @@ import rospkg
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import JointState
 from cv_bridge import CvBridge
+import numpy as np
 
 from utils import Config
 from utils import Resizer
@@ -18,6 +19,7 @@ class Controller:
         rospy.Subscriber(config.joint_states_topic, JointState, self.on_joint_state)
         rospy.Timer(rospy.Duration(1.0/hz), self.on_timer)
 
+        self.config = config
         self.hz = hz
         self.predictor = predictor
         self.resizer = Resizer(config.image_config)
@@ -25,10 +27,21 @@ class Controller:
         self._is_active = False
         self._image_msg = None
         self._joint_state_msg = None
+        self._joint_index_table = {}
 
     def activate(self): self._is_active = True
     def on_image(self, image_msg): self._image_msg = image_msg
-    def on_joint_state(self, joint_state_msg): self._joint_state_msg = joint_state_msg
+
+    def on_joint_state(self, joint_state_msg): 
+        self._joint_state_msg = joint_state_msg
+
+    def obtain_angle_vector(self, joint_state_msg):
+        if self._joint_index_table == {}: # create cache
+            for idx, name in enumerate(joint_state_msg.name):
+                self._joint_index_table[name] = idx
+        ctrl_idxes = [self._joint_index_table[name] for name in self.config.control_joint_names]
+        angle_vector = np.array([joint_state_msg.position[idx] for idx in ctrl_idxes])
+        return angle_vector
 
     def check_msgs_validity(self):
         ts_now = rospy.get_rostime().to_sec()
@@ -53,6 +66,7 @@ class Controller:
         bridge = CvBridge()
         image = bridge.imgmsg_to_cv2(self._image_msg, desired_encoding='passthrough')
         image_resized = self.resizer(image)
+        angle_vector = self.obtain_angle_vector(self._joint_state_msg)
 
 if __name__=='__main__':
     rospy.init_node('visuo_motor_controller', anonymous=True)
