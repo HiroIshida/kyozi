@@ -3,6 +3,17 @@ import sys
 import time
 import pickle
 import yaml
+import cv2
+
+class Resizer:
+    def __init__(self, image_config):
+        self.x_bound = slice(image_config.x_min, image_config.x_max)
+        self.y_bound = slice(image_config.y_min, image_config.y_max)
+        self.resol = image_config.resolution
+    def __call__(self, cv_img):
+        cv_img = cv_img[self.x_bound, self.y_bound]
+        resized = cv2.resize(cv_img, (self.resol, self.resol), interpolation = cv2.INTER_AREA)
+        return resized
 
 class ImageConfig(object):
     def __init__(self, img_dict):

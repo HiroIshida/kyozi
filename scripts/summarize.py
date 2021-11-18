@@ -6,23 +6,12 @@ import pickle
 import tqdm
 import numpy as np
 import math
-import cv2
 import rospkg
 
 from utils import DataChunk
 from utils import get_cache_directory, get_project_directory
 from utils import load_pickle_6compat
-from utils import Config, construct_config
-
-class Resizer:
-    def __init__(self, image_config):
-        self.x_bound = slice(image_config.x_min, image_config.x_max)
-        self.y_bound = slice(image_config.y_min, image_config.y_max)
-        self.resol = image_config.resolution
-    def __call__(self, cv_img):
-        cv_img = cv_img[self.x_bound, self.y_bound]
-        resized = cv2.resize(cv_img, (self.resol, self.resol), interpolation = cv2.INTER_AREA)
-        return resized
+from utils import Config, construct_config, Resizer
 
 def clamp_to_s1(something):
     lower_side = -math.pi
