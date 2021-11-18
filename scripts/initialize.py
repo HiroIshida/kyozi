@@ -19,4 +19,4 @@ if __name__=='__main__':
         robot.__dict__[jn].joint_angle(angle)
 
     ri = skrobot.interfaces.ros.PR2ROSRobotInterface(robot)
-    ri.angle_vector(robot.angle_vector(), time=1.0, time_scale=1.0)
+    ri.angle_vector(robot.angle_vector(), time=3.0, time_scale=1.0)
