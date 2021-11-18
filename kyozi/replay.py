@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import sys
+from types import prepare_class
+assert sys.version_info.major==3, 'python2.x under construction'
 import argparse
 import os
 import rospy
@@ -8,20 +10,19 @@ from sensor_msgs.msg import Image
 from sensor_msgs.msg import JointState
 from cv_bridge import CvBridge
 import numpy as np
+import skrobot
 
 from kyozi.utils import Config
 from kyozi.utils import Resizer
 from kyozi.utils import construct_config
 
-assert sys.version_info.major==3, 'python2.x under construction'
+from mimic.predictor import ImageCommandPredictor
 
 class Controller:
-    def __init__(self, predictor, config: Config, hz=5):
+    def __init__(self, predictor: ImageCommandPredictor, config: Config, hz=5):
 
-        rospy.Subscriber(config.image_topic, Image, self.on_image)
-        rospy.Subscriber(config.joint_states_topic, JointState, self.on_joint_state)
-        rospy.Timer(rospy.Duration(1.0/hz), self.on_timer)
-
+        self.robot = skrobot.models.PR2() # TODO(HiroIshida) currently only PR2
+        self.ri = skrobot.interfaces.ros.PR2ROSRobotInterface(self.robot)
         self.config = config
         self.hz = hz
         self.predictor = predictor
@@ -31,6 +32,10 @@ class Controller:
         self._image_msg = None
         self._joint_state_msg = None
         self._joint_index_table = {}
+
+        rospy.Subscriber(config.image_topic, Image, self.on_image)
+        rospy.Subscriber(config.joint_states_topic, JointState, self.on_joint_state)
+        rospy.Timer(rospy.Duration(1.0/hz), self.on_timer)
 
     def activate(self): self._is_active = True
     def on_image(self, image_msg): self._image_msg = image_msg
@@ -70,6 +75,14 @@ class Controller:
         image = bridge.imgmsg_to_cv2(self._image_msg, desired_encoding='passthrough')
         image_resized = self.resizer(image)
         angle_vector = self.obtain_angle_vector(self._joint_state_msg)
+        self.predictor.feed((image_resized, angle_vector))
+        image_next, command_next =  self.predictor.predict(n_horizon=1)[0]
+
+        assert len(command_next) == len(self.config.control_joint_names)
+
+        for jn, angle in zip(self.config.control_joint_names, command_next):
+            self.robot.__dict__[jn].joint_angle(angle)
+        self.ri.angle_vector(self.robot.angle_vector(), time=1.0, time_scale=1.0)
 
 if __name__=='__main__':
     rospy.init_node('visuo_motor_controller', anonymous=True)
