@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sys
 import argparse
 import os
 import rospy
@@ -8,9 +9,11 @@ from sensor_msgs.msg import JointState
 from cv_bridge import CvBridge
 import numpy as np
 
-from utils import Config
-from utils import Resizer
-from utils import construct_config
+from kyozi.utils import Config
+from kyozi.utils import Resizer
+from kyozi.utils import construct_config
+
+assert sys.version_info.major==3, 'python2.x under construction'
 
 class Controller:
     def __init__(self, predictor, config: Config, hz=5):
