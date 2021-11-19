@@ -23,6 +23,7 @@ class Controller:
 
         self.robot = skrobot.models.PR2() # TODO(HiroIshida) currently only PR2
         self.ri = skrobot.interfaces.ros.PR2ROSRobotInterface(self.robot)
+        self.robot.angle_vector(self.ri.angle_vector())
         self.config = config
         self.hz = hz
         self.predictor = predictor
