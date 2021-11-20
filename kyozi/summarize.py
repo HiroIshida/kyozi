@@ -49,7 +49,7 @@ def summarize(config, sampling_hz=24):
     for fn in tqdm.tqdm(cache_files):
         sequence = load_dill_6compat(fn)
         img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resizer)
-        img_seqs.append(img_seq)
+        img_seqs.append(np.nan_to_num(img_seq))
         cmd_seqs.append(clamp_to_s1(cmd_seq))
         print("summarized into {0} points.".format(len(img_seq)))
     return img_seqs, cmd_seqs
