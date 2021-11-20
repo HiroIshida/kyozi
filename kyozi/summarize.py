@@ -10,7 +10,7 @@ import rospkg
 
 from utils import DataChunk
 from utils import get_cache_directory, get_project_directory
-from utils import load_pickle_6compat
+from utils import load_dill_6compat
 from utils import Config, construct_config, Resizer
 
 def clamp_to_s1(something):
@@ -47,7 +47,7 @@ def summarize(config, sampling_hz=24):
     img_seqs = []
     cmd_seqs = []
     for fn in tqdm.tqdm(cache_files):
-        sequence = load_pickle_6compat(fn)
+        sequence = load_dill_6compat(fn)
         img_seq, cmd_seq = nearest_time_sampling(sequence, sampling_hz, resizer)
         img_seqs.append(img_seq)
         cmd_seqs.append(clamp_to_s1(cmd_seq))

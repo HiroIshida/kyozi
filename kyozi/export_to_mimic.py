@@ -3,7 +3,7 @@ import argparse
 import rospkg
 import pickle
 from utils import construct_config
-from utils import load_pickle_6compat
+from utils import load_dill_6compat
 from mimic.datatype import ImageCommandDataChunk
 
 # HiroIshida's personal project
@@ -20,7 +20,7 @@ if __name__=='__main__':
 
     config = construct_config(config_file)
     filename = os.path.expanduser(os.path.join(config.project_path, 'summary_chunk.pickle'))
-    data = load_pickle_6compat(filename)
+    data = load_dill_6compat(filename)
 
     chunk = ImageCommandDataChunk()
     for img_seq, cmd_seq in zip(data['img_seqs'], data['cmd_seqs']):

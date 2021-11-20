@@ -3,11 +3,7 @@ import sys
 import time
 import yaml
 import cv2
-
-if sys.version_info.major==3:
-    import pickle
-else:
-    import cPickle as pickle
+import dill
 
 class Resizer:
     def __init__(self, image_config):
@@ -62,14 +58,14 @@ def construct_config(config_file):
             )
     return config
 
-def load_pickle_6compat(filename):
+def load_dill_6compat(filename):
     try:
         with open(filename, 'rb') as f:
-            obj = pickle.load(f)
+            obj = dill.load(f)
     except UnicodeDecodeError:
         print('probably cache file was created by 2.x but attempt to load by 3.x')
         with open(filename, 'rb') as f:
-            obj = pickle.load(f, encoding='latin1')
+            obj = dill.load(f, encoding='latin1')
     return obj
 
 def get_project_directory(config):
@@ -101,5 +97,5 @@ class DataChunk:
         filename = os.path.join(
                 get_cache_directory(config), 'sequence-{0}.cache'.format(postfix))
         with open(filename, 'wb') as f:
-            pickle.dump(self, f)
+            dill.dump(self, f)
 

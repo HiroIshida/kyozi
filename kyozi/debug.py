@@ -19,7 +19,7 @@ except:
     _has_skrobot = False
 
 from utils import get_project_directory, get_cache_directory
-from utils import load_pickle_6compat
+from utils import load_dill_6compat
 from utils import construct_config
 
 def get_sample_data(config):
@@ -28,7 +28,7 @@ def get_sample_data(config):
     chunk_files = [fn for fn in files if os.path.splitext(fn)[1]=='.pickle']
     assert len(chunk_files) == 1
 
-    chunk = load_pickle_6compat(chunk_files[0])
+    chunk = load_dill_6compat(chunk_files[0])
     cmd_seq = chunk['cmd_seqs'][0]
     img_seq = chunk['img_seqs'][0]
 
