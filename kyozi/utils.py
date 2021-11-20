@@ -1,9 +1,13 @@
 import os
 import sys
 import time
-import pickle
 import yaml
 import cv2
+
+if sys.version_info.major==3:
+    import pickle
+else:
+    import cPickle as pickle
 
 class Resizer:
     def __init__(self, image_config):
