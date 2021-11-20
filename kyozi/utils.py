@@ -27,6 +27,7 @@ class Config(object):
     def __init__(self, 
             project_path, 
             image_topic, 
+            depth_image_topic,
             joint_states_topic, 
             control_joint_names,
             init_joint_names,
@@ -35,6 +36,7 @@ class Config(object):
             ):
         self.project_path = project_path
         self.image_topic = image_topic
+        self.depth_image_topic = depth_image_topic
         self.joint_states_topic = joint_states_topic
         self.control_joint_names = control_joint_names
         self.init_joint_names = init_joint_names
@@ -47,6 +49,7 @@ def construct_config(config_file):
     config = Config(
             project_path = dic['project_path'], 
             image_topic = dic['image_topic'],
+            depth_image_topic= dic['depth_image_topic'],
             joint_states_topic = dic['joint_states_topic'],
             control_joint_names = dic['control_joint_names'],
             init_joint_names = dic['init_joint_names'],

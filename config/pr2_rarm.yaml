@@ -1,5 +1,6 @@
 project_path: ~/.kyozi
 image_topic: /kinect_head/rgb/image_color
+depth_image_topic: /kinect_head/depth_registered/image
 joint_states_topic: /joint_states
 control_joint_names: [
     r_shoulder_pan_joint, 
