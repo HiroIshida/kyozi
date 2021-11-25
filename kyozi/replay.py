@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import sys
-from types import prepare_class
 assert sys.version_info.major==3, 'python2.x under construction'
+import time
 import argparse
 import os
 import rospy
@@ -15,8 +15,16 @@ import skrobot
 from kyozi.utils import Config
 from kyozi.utils import Resizer
 from kyozi.utils import construct_config
+from kyozi.utils import get_cache_directory
 
 from mimic.predictor import ImageCommandPredictor
+
+try:
+    import moviepy
+    from moviepy.editor import ImageSequenceClip
+    _has_moviepy = True
+except:
+    _has_moviepy = False
 
 class Controller:
     def __init__(self, predictor: ImageCommandPredictor, config: Config, hz=5):
@@ -34,11 +42,14 @@ class Controller:
         self._joint_state_msg = None
         self._joint_index_table = {}
 
+        self._debug_fed_images = []
+
         rospy.Subscriber(config.image_topic, Image, self.on_image)
         rospy.Subscriber(config.joint_states_topic, JointState, self.on_joint_state)
         rospy.Timer(rospy.Duration(1.0/hz), self.on_timer)
 
     def activate(self): self._is_active = True
+    def deactivate(self): self._is_active = False
     def on_image(self, image_msg): self._image_msg = image_msg
 
     def on_joint_state(self, joint_state_msg): 
@@ -77,6 +88,7 @@ class Controller:
         image_resized = self.resizer(image)
         angle_vector = self.obtain_angle_vector(self._joint_state_msg)
         self.predictor.feed((image_resized, angle_vector))
+        self._debug_fed_images.append(image_resized)
         image_next, command_next =  self.predictor.predict(n_horizon=1)[0]
 
         assert len(command_next) == len(self.config.control_joint_names)
@@ -84,6 +96,18 @@ class Controller:
         for jn, angle in zip(self.config.control_joint_names, command_next):
             self.robot.__dict__[jn].joint_angle(angle)
         self.ri.angle_vector(self.robot.angle_vector(), time=1.0, time_scale=1.0)
+
+    def end_replay(self):
+        print("finishing the session...")
+        self.deactivate()
+        if not _has_moviepy:
+            print("gif is not saved because moviepy not found")
+            return
+        directory = get_cache_directory(self.config, cache_name='replay_cache')
+        postfix = time.strftime("%Y%m%d%H%M%S")
+        filename = os.path.join(directory, 'fed_images-{}.gif'.format(postfix))
+        clip = ImageSequenceClip([img for img in self._debug_fed_images], fps=50)
+        clip.write_gif(filename, fps=50)
 
 if __name__=='__main__':
     rospy.init_node('visuo_motor_controller', anonymous=True)
@@ -95,6 +119,11 @@ if __name__=='__main__':
     config_file = args.config
     config = construct_config(config_file)
 
-    cont = Controller(None, config, hz=3)
+    cont = Controller(None, config, hz=1)
     cont.activate()
-    rospy.spin()
+    try:
+        rospy.spin()
+    except KeyboardInterrupt: 
+        rospy.loginfo('finish')
+        cont.end_replay()
+        sys.exit(0)

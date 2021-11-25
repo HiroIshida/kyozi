@@ -74,9 +74,9 @@ def get_project_directory(config):
         os.makedirs(dirname)
     return dirname
 
-def get_cache_directory(config): 
+def get_cache_directory(config, cache_name='kyozi_cache'): 
     project_dir = get_project_directory(config)
-    cache_dir = os.path.join(project_dir, 'kyozi_cache')
+    cache_dir = os.path.join(project_dir, cache_name)
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
     return cache_dir
