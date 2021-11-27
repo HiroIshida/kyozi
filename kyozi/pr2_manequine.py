@@ -6,6 +6,7 @@ import sys
 import time
 import skrobot
 import rospy
+import threading
 from pr2_mechanism_msgs.srv import SwitchController
 
 from kyozi.utils import Config, construct_config
@@ -18,7 +19,7 @@ def switch_controller(start=True):
         resp = sp(start_controllers=loose_controller_name, stop_controllers=controller_name)
     else:
         resp = sp(start_controllers=controller_name, stop_controllers=loose_controller_name)
-    print(resp)
+    print('controller service response: {}'.format(resp))
     return resp
 
 def switch_controller_whole(start=True):
@@ -29,7 +30,7 @@ def switch_controller_whole(start=True):
         resp = sp(start_controllers=loose_controller_name, stop_controllers=controller_name)
     else:
         resp = sp(start_controllers=controller_name, stop_controllers=loose_controller_name)
-    print(resp)
+    print('controller service response: {}'.format(resp))
     return resp
 
 def start_mannequin(is_whole):
@@ -49,13 +50,9 @@ class Mannequin(object):
         robot = skrobot.models.PR2()
         self.robot = robot
         self.ri = skrobot.interfaces.ros.PR2ROSRobotInterface(robot)
-
-        for jn, angle in zip(config.init_joint_names, config.init_joint_angles):
-            robot.__dict__[jn].joint_angle(angle)
-        self.ri.angle_vector(robot.angle_vector(), time=3.0, time_scale=1.0)
+        self.config = config
 
         time.sleep(3)
-        print("fin")
         lnames = [
                 "l_shoulder_pan_joint",
                 "l_shoulder_lift_joint",
@@ -77,6 +74,18 @@ class Mannequin(object):
         self.ljoints = [robot.__dict__[n] for n in lnames]
         self.rjoints = [robot.__dict__[n] for n in rnames]
         self.is_whole = is_whole
+        self.is_active = False
+
+        self.reset_mannequin()
+
+    def reset_mannequin(self):
+        stop_mannequin(False)
+        self.is_active = False
+        for jn, angle in zip(self.config.init_joint_names, self.config.init_joint_angles):
+            self.robot.__dict__[jn].joint_angle(angle)
+        self.ri.angle_vector(self.robot.angle_vector(), time=3.0, time_scale=1.0)
+        print("resetting pose...")
+        time.sleep(3.5)
 
     def mirror(self, time):
         if self.is_whole:
@@ -95,13 +104,23 @@ class Mannequin(object):
         self.ri.angle_vector(self.robot.angle_vector(), time=time, time_scale=1.0)
 
     def start(self):
-        r = rospy.Rate(10)
-        self.mirror(3.0)
-        while not rospy.is_shutdown():
-            self.mirror(0.5)
-            r.sleep()
+        start_mannequin(is_whole)
+        self.is_active = True
+        def mirror_while():
+            r = rospy.Rate(10)
+            self.mirror(3.0)
+            while self.is_active:
+                self.mirror(0.5)
+                r.sleep()
 
-    def __dell__(self):
+        thread = threading.Thread(target=mirror_while)
+        thread.daemon = True
+        thread.start()
+
+    def terminate(self):
+        self.is_active = False
+        print("deactivate...")
+        time.sleep(1)
         stop_mannequin(self.is_whole)
         print("mannequin stopped")
 
@@ -119,11 +138,14 @@ if __name__=='__main__':
     is_whole = args.whole
 
     mq = Mannequin(config, is_whole=is_whole)
-    try:
-        print("start mannequin")
-        start_mannequin(is_whole)
-        mq.start()
-    except KeyboardInterrupt:
-        print("stop mannequin")
-        stop_mannequin(is_whole)
-        sys.exit()
+    mq.start()
+
+    while True:
+        print('e: end mannequin, r: reset pose')
+        key = input()
+        if key=='e':
+            mq.terminate()
+            break
+        if key=='r':
+            mq.reset_mannequin()
+            mq.start()
