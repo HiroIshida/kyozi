@@ -74,13 +74,17 @@ class Mannequin(object):
         self.ljoints = [robot.__dict__[n] for n in lnames]
         self.rjoints = [robot.__dict__[n] for n in rnames]
         self.is_whole = is_whole
-        self.is_active = False
+
+        self.is_thread_active = False
+        self.thread = None
 
         self.reset_mannequin()
 
     def reset_mannequin(self):
         stop_mannequin(False)
-        self.is_active = False
+        self.is_thread_active = False
+        if self.thread:
+            self.thread.join()
         for jn, angle in zip(self.config.init_joint_names, self.config.init_joint_angles):
             self.robot.__dict__[jn].joint_angle(angle)
         self.ri.angle_vector(self.robot.angle_vector(), time=3.0, time_scale=1.0)
@@ -105,22 +109,22 @@ class Mannequin(object):
 
     def start(self):
         start_mannequin(is_whole)
-        self.is_active = True
+        self.is_thread_active = True
         def mirror_while():
             r = rospy.Rate(10)
             self.mirror(3.0)
-            while self.is_active:
+            while self.is_thread_active:
                 self.mirror(0.5)
                 r.sleep()
 
-        thread = threading.Thread(target=mirror_while)
-        thread.daemon = True
-        thread.start()
+        self.thread = threading.Thread(target=mirror_while)
+        self.thread.daemon = True
+        self.thread.start()
 
     def terminate(self):
-        self.is_active = False
+        self.is_thread_active = False
         print("deactivate...")
-        time.sleep(1)
+        self.thread.join()
         stop_mannequin(self.is_whole)
         print("mannequin stopped")
 
