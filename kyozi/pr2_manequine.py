@@ -142,7 +142,10 @@ if __name__=='__main__':
 
     while True:
         print('e: end mannequin, r: reset pose')
-        key = input()
+        if sys.version_info.major == 3:
+            key = input()
+        else:
+            key = raw_input()
         if key=='e':
             mq.terminate()
             break

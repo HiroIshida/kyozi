@@ -1,2 +1,5 @@
 from kyozi import utils
-from kyozi import replay
+import sys
+if sys.version_info.major == 3:
+    # replay basicaly requirs torch 
+    from kyozi import replay
