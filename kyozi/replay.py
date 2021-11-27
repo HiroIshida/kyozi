@@ -27,7 +27,7 @@ except:
     _has_moviepy = False
 
 class Controller:
-    def __init__(self, predictor: ImageCommandPredictor, config: Config, hz=5):
+    def __init__(self, predictor: ImageCommandPredictor, config: Config, hz=5, n_bootstrap=1):
 
         self.robot = skrobot.models.PR2() # TODO(HiroIshida) currently only PR2
         self.ri = skrobot.interfaces.ros.PR2ROSRobotInterface(self.robot)
@@ -36,13 +36,16 @@ class Controller:
         self.hz = hz
         self.predictor = predictor
         self.resizer = Resizer(config.image_config)
+        self.n_bootstrap = n_bootstrap
 
+        self._feed_count = 0
         self._is_active = False
         self._image_msg = None
         self._joint_state_msg = None
         self._joint_index_table = {}
 
         self._debug_fed_images = []
+        self._debug_pred_images = []
 
         rospy.Subscriber(config.image_topic, Image, self.on_image)
         rospy.Subscriber(config.joint_states_topic, JointState, self.on_joint_state)
@@ -87,9 +90,19 @@ class Controller:
         image = bridge.imgmsg_to_cv2(self._image_msg, desired_encoding='passthrough')
         image_resized = self.resizer(image)
         angle_vector = self.obtain_angle_vector(self._joint_state_msg)
-        self.predictor.feed((image_resized, angle_vector))
-        self._debug_fed_images.append(image_resized)
+        if self._feed_count==0:
+            for i in range(self.n_bootstrap):
+                self.predictor.feed((image_resized, angle_vector))
+                self._debug_fed_images.append(image_resized)
+        else:
+            self.predictor.feed((image_resized, angle_vector))
+            self._debug_fed_images.append(image_resized)
+
+        self._feed_count += 1
         image_next, command_next =  self.predictor.predict(n_horizon=1)[0]
+
+        if image_next is not None:
+            self._debug_pred_images.append(image_next)
 
         assert len(command_next) == len(self.config.control_joint_names)
 
@@ -105,9 +118,14 @@ class Controller:
             return
         directory = get_cache_directory(self.config, cache_name='replay_cache')
         postfix = time.strftime("%Y%m%d%H%M%S")
-        filename = os.path.join(directory, 'fed_images-{}.gif'.format(postfix))
+        filename_fed = os.path.join(directory, 'fed_images-{}.gif'.format(postfix))
+        filename_pred = os.path.join(directory, 'pred_images-{}.gif'.format(postfix))
+
         clip = ImageSequenceClip([img for img in self._debug_fed_images], fps=50)
-        clip.write_gif(filename, fps=50)
+        clip.write_gif(filename_fed, fps=50)
+
+        clip = ImageSequenceClip([img for img in self._debug_pred_images], fps=50)
+        clip.write_gif(filename_pred, fps=50)
 
 if __name__=='__main__':
     rospy.init_node('visuo_motor_controller', anonymous=True)
