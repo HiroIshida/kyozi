@@ -19,7 +19,7 @@ if __name__=='__main__':
     config_file = os.path.join(rospkg.RosPack().get_path('kyozi'), 'config', 'pr2_rarm.yaml')
     config = construct_config(config_file)
     predictor = create_predictor_from_name(project_name, model_name)
-    cont = Controller(predictor, config, hz=1)
+    cont = Controller(predictor, config, hz=8.0)
     cont.activate()
 
     try:

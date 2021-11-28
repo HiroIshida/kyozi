@@ -27,7 +27,7 @@ except:
     _has_moviepy = False
 
 class Controller:
-    def __init__(self, predictor: ImageCommandPredictor, config: Config, hz=5, n_bootstrap=1):
+    def __init__(self, predictor: ImageCommandPredictor, config: Config, hz=5, n_bootstrap=10):
 
         self.robot = skrobot.models.PR2() # TODO(HiroIshida) currently only PR2
         self.ri = skrobot.interfaces.ros.PR2ROSRobotInterface(self.robot)
@@ -89,13 +89,13 @@ class Controller:
         bridge = CvBridge()
         image = bridge.imgmsg_to_cv2(self._image_msg, desired_encoding='passthrough')
         image_resized = self.resizer(image)
-        angle_vector = self.obtain_angle_vector(self._joint_state_msg)
+        current_angle_vector = self.obtain_angle_vector(self._joint_state_msg)
         if self._feed_count==0:
             for i in range(self.n_bootstrap):
-                self.predictor.feed((image_resized, angle_vector))
+                self.predictor.feed((image_resized, current_angle_vector))
                 self._debug_fed_images.append(image_resized)
         else:
-            self.predictor.feed((image_resized, angle_vector))
+            self.predictor.feed((image_resized, current_angle_vector))
             self._debug_fed_images.append(image_resized)
 
         self._feed_count += 1
@@ -106,6 +106,7 @@ class Controller:
 
         assert len(command_next) == len(self.config.control_joint_names)
 
+        current_angle_vector + (command_next - current_angle_vector) * self.hz
         for jn, angle in zip(self.config.control_joint_names, command_next):
             self.robot.__dict__[jn].joint_angle(angle)
         self.ri.angle_vector(self.robot.angle_vector(), time=1.0, time_scale=1.0)
@@ -121,11 +122,11 @@ class Controller:
         filename_fed = os.path.join(directory, 'fed_images-{}.gif'.format(postfix))
         filename_pred = os.path.join(directory, 'pred_images-{}.gif'.format(postfix))
 
-        clip = ImageSequenceClip([img for img in self._debug_fed_images], fps=50)
-        clip.write_gif(filename_fed, fps=50)
+        clip = ImageSequenceClip([img for img in self._debug_fed_images], fps=20)
+        clip.write_gif(filename_fed, fps=20)
 
-        clip = ImageSequenceClip([img for img in self._debug_pred_images], fps=50)
-        clip.write_gif(filename_pred, fps=50)
+        clip = ImageSequenceClip([img for img in self._debug_pred_images], fps=20)
+        clip.write_gif(filename_pred, fps=20)
 
 if __name__=='__main__':
     rospy.init_node('visuo_motor_controller', anonymous=True)
