@@ -87,7 +87,7 @@ class Mannequin(object):
             self.thread.join()
         for jn, angle in zip(self.config.init_joint_names, self.config.init_joint_angles):
             self.robot.__dict__[jn].joint_angle(angle)
-        self.ri.angle_vector(self.robot.angle_vector(), time=3.0, time_scale=1.0)
+        self.ri.angle_vector(self.robot.angle_vector(), time=2.0, time_scale=1.0)
         print("resetting pose...")
         time.sleep(3.5)
 
