@@ -1,4 +1,10 @@
 project_path: ~/.kyozi
+rosbag_topics: [
+    /tf,
+    /kinect_head/rgb/image_color, 
+    /joint_states, 
+    /left_endeffector/wrench, 
+    /right_endeffector/wrench]
 image_topic: /kinect_head/rgb/image_color
 depth_image_topic: #/kinect_head/depth_registered/image
 joint_states_topic: /joint_states

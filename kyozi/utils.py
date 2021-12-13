@@ -26,6 +26,7 @@ class ImageConfig(object):
 class Config(object):
     def __init__(self, 
             project_path, 
+            rosbag_topics,
             image_topic, 
             depth_image_topic,
             joint_states_topic, 
@@ -34,6 +35,7 @@ class Config(object):
             init_joint_angles,
             image_config,
             ):
+        self.rosbag_topics = rosbag_topics
         self.project_path = project_path
         self.image_topic = image_topic
         self.depth_image_topic = depth_image_topic
@@ -48,6 +50,7 @@ def construct_config(config_file):
         dic = yaml.safe_load(f)
     config = Config(
             project_path = dic['project_path'], 
+            rosbag_topics = dic['rosbag_topics'],
             image_topic = dic['image_topic'],
             depth_image_topic= dic['depth_image_topic'],
             joint_states_topic = dic['joint_states_topic'],
