@@ -6,6 +6,7 @@ import pickle
 import sys
 import yaml
 import json
+import PIL.Image
 import rospy
 import rospkg
 import message_filters
@@ -34,10 +35,13 @@ def postprocess(config):
     depth_resized = Resizer(config.image_config)(depth)
 
     postfix = time.strftime("%Y%m%d%H%M%S")
-    filename = os.path.join(
-            get_cache_directory(config, 'scene'), 'scene-{0}.pkl'.format(postfix))
-    with open(filename, 'wb') as f:
-        pickle.dump((image_resized, depth_resized), f)
+    filename = lambda ext: os.path.join(
+            get_cache_directory(config, 'scene'), 'scene-{0}.{1}'.format(postfix, ext))
+
+    PIL.Image.fromarray(image_resized).save(filename('png'))
+
+    with open(filename('pkl'), 'wb') as f:
+        pickle.dump(depth_resized, f)
 
 if __name__=='__main__':
     rospy.init_node('scene_saver', disable_signals=True)
