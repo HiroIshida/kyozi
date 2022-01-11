@@ -4,6 +4,8 @@ import time
 import yaml
 import cv2
 import dill
+import numpy as np
+import scipy.interpolate
 
 class Resizer:
     def __init__(self, image_config):
@@ -14,6 +16,31 @@ class Resizer:
         cv_img = cv_img[self.x_bound, self.y_bound]
         resized = cv2.resize(cv_img, (self.resol, self.resol), interpolation = cv2.INTER_AREA)
         return resized
+
+class DepthResizer(Resizer):
+    def __call__(self, depth_img):
+        depth_img = depth_img[self.x_bound, self.y_bound]
+
+        def create_mesh_points(width, height):
+            xlin = np.linspace(0, 1., width)
+            ylin = np.linspace(0, 1., height)
+            xx, yy = np.meshgrid(xlin, ylin)
+            pts = np.array(list(zip(xx.flatten(), yy.flatten())))
+            return pts
+
+        pts_in = create_mesh_points(*depth_img.shape)
+        pts_out = create_mesh_points(self.resol, self.resol)
+
+        itped = scipy.interpolate.griddata(pts_in, depth.T.flatten(), pts_out)
+        itped_reshaped = itped.reshape(self.resol, self.resol).T
+        return itped_reshaped
+
+def load_depth(depth_msg):
+    size = [depth_msg.width, depth_msg.height]
+    buf = np.ndarray(shape=(1, int(len(depth_msg.data)/4)),
+                      dtype=np.float32, buffer=depth_msg.data)
+    depth = buf.reshape(*size)
+    return depth
 
 class ImageConfig(object):
     def __init__(self, img_dict):
